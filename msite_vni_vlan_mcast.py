@@ -2,38 +2,13 @@ import re
 import glob
 import sys
 
-
-def room_12_list(sh_nve_outputs):
-#creating a list of show_nve_vni files for room 12
-    room_12_outputs = []
+def cfg_list(sh_nve_outputs,regex):
+#creating a list of show_nve_vni files for room
+    room_outputs = []
     for output in sh_nve_outputs:
-        if re.search('SKO-DATA-AC-012.*', output) != None:
-            room_12_outputs.append(re.search('SKO-DATA-AC-012.*', output).group())
-    return room_12_outputs
-
-def room_11_list(sh_nve_outputs):
-# creating a list of show_nve_vni files for room 11
-    room_11_outputs = []
-    for output in sh_nve_outputs:
-        if re.search('SKO-DATA-AC-011.*', output) != None:
-            room_11_outputs.append(re.search('SKO-DATA-AC-011.*', output).group())
-    return room_11_outputs
-
-def room_md_list(sh_nve_outputs):
-# creating a list of show_nve_vni files for room md
-    room_md_outputs = []
-    for output in sh_nve_outputs:
-        if re.search('SKO-DATA-AC-MD.*', output) != None:
-            room_md_outputs.append(re.search('SKO-DATA-AC-MD.*', output).group())
-    return room_md_outputs
-
-def room_bl_list(sh_nve_outputs):
-# creating a list of show_nve_vni files for mpod bl
-    bl_outputs = []
-    for output in sh_nve_outputs:
-        if re.search('SKO-DATA-BL.*', output) != None:
-            bl_outputs.append(re.search('SKO-DATA-BL.*INT-show.*', output).group())
-    return bl_outputs
+        if re.search(regex,output) != None:
+            room_outputs.append(re.search(regex,output).group())
+    return room_outputs
 
 def parse_sh_nve(site_outputs,mpod_outputs,path):
 # regex that cover L2vni with mcast, Up state
@@ -60,7 +35,8 @@ def parse_sh_nve(site_outputs,mpod_outputs,path):
 # creating a set for list of tuples (vni:vlan) for mpod
     l2vni_mpod_set = set(l2vni_mpod)
 # finding set intersection between site and mpod
-    result = l2vni_site_set.intersection(l2vni_mpod_set)
+    result_unsorted = l2vni_site_set.intersection(l2vni_mpod_set)
+    result = sorted(result_unsorted)
 # cfg template
     template = (
     "vlan {}\n"
@@ -88,8 +64,11 @@ def parse_sh_nve(site_outputs,mpod_outputs,path):
 def main():
     path = sys.argv[1]
     sh_nve_outputs = glob.glob(path + '/*.txt')
-    site = room_12_list(sh_nve_outputs)
-    mpod = room_11_list(sh_nve_outputs)+room_md_list(sh_nve_outputs)+room_bl_list(sh_nve_outputs)
+    site = cfg_list(sh_nve_outputs,'SKO-DATA-AC-012.*')
+    room_11 = cfg_list(sh_nve_outputs,'SKO-DATA-AC-011.*')
+    room_md = cfg_list(sh_nve_outputs,'SKO-DATA-AC-MD.*')
+    mpod_bl = cfg_list(sh_nve_outputs,'SKO-DATA-BL.*')
+    mpod = room_11+room_md+mpod_bl
     parse_sh_nve(site,mpod,path)
 
 
