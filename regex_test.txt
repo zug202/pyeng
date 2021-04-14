@@ -1,0 +1,5 @@
+nve1      2010262  UnicastBGP        Up    CP   L2 [262]             
+nve1      2030000  n/a               Up    CP   L3 [iMZ]           
+nve1      2030107  225.1.0.3         Up    CP   L2 [107]           SA
+nve1      2032529  225.1.0.3         Up    CP   L2 [2529]          SA
+nve1      2042601  225.1.0.4         Up    CP   L2 [2601]          MS-IR  

@@ -196,12 +196,11 @@ def generate_config(ag_vni_list, bg_vni_list, l2vni_mcast, bg_vni_list_diff, pat
 def main():
     path = sys.argv[1]
     sh_nve_outputs = glob.glob(path + '/*.log')
-    site = cfg_list(sh_nve_outputs, 'SKO-DATA-AC-012.*')
-    room_11 = cfg_list(sh_nve_outputs, 'SKO-DATA-AC-011.*')
+    site = cfg_list(sh_nve_outputs, 'SKO-DATA-AC-011.*')
     room_md = cfg_list(sh_nve_outputs, 'SKO-DATA-AC-MD.*')
     mpod_bl = cfg_list(sh_nve_outputs, 'SKO-DATA-BL.*')
     mpod_bg = cfg_list(sh_nve_outputs, 'SKO-DATA-BG-[MD1|MD2].*INT.*')
-    mpod = room_11+room_md+mpod_bl
+    mpod = room_md+mpod_bl
     ag_vni_vlan_list, bg_vni_vlan_list, l2vni_mcast_map, bg_vni_vlan_list_diff = parse_sh_nve(site, mpod, mpod_bg, path)
     generate_config(ag_vni_vlan_list, bg_vni_vlan_list, l2vni_mcast_map, bg_vni_vlan_list_diff, path)
 
