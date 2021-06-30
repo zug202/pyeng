@@ -135,8 +135,8 @@ def generate_config(ag_vni_list, bg_vni_list, l2vni_mcast, path):
             template_bg_vni_evpn = (
                 f" vni {vni_vlan[0]} l2\n"
                 "  rd auto\n"
-                f"  route-target import 64998:{vni_vlan[0]}\n"
-                f"  route-target export 64998:{vni_vlan[0]}\n"
+                f"  route-target import 65554:{vni_vlan[0]}\n"
+                f"  route-target export 65554:{vni_vlan[0]}\n"
                 "\n"
             )
             bg_l2_vni.write(template_bg_vni_evpn)
@@ -170,8 +170,8 @@ def generate_config(ag_vni_list, bg_vni_list, l2vni_mcast, path):
             template_ag_vni_evpn = (
                 f" vni {vni_vlan[0]} l2\n"
                 "  rd auto\n"
-                f"  route-target import 64998:{vni_vlan[0]}\n"
-                f"  route-target export 64998:{vni_vlan[0]}\n"
+                f"  route-target import 65554:{vni_vlan[0]}\n"
+                f"  route-target export 65554:{vni_vlan[0]}\n"
                 "\n"
             )
             ag_l2_vni.write(template_ag_vni_evpn)
@@ -213,9 +213,11 @@ def generate_config(ag_vni_list, bg_vni_list, l2vni_mcast, path):
 def main():
     path = sys.argv[1]
     sh_nve_outputs = glob.glob(path + '/*.txt')
-    site = cfg_list(sh_nve_outputs, 'SKO-DATA-AC-MD.*')
-    mpod = cfg_list(sh_nve_outputs, 'SKO-DATA-BL.*')
-    mpod_bg = cfg_list(sh_nve_outputs, 'SKO-DATA-BG-[MD1|MD2].*INT.*')
+    site = cfg_list(sh_nve_outputs, 'SKO-DATA-AC-014.*')
+    mpod_bl = cfg_list(sh_nve_outputs, 'SKO-DATA-BL.*')
+    mpod_bg = cfg_list(sh_nve_outputs, 'SKO-DATA-BG-[MD1|MD2].*EXT.*')
+    room_md = cfg_list(sh_nve_outputs, 'SKO-DATA-AC-MD.*')
+    mpod = room_md + mpod_bl
     ag_vni_vlan_set, bg_vni_vlan_set, l2vni_mcast = parse_sh_nve(site, mpod, mpod_bg, path)
     generate_config(ag_vni_vlan_set, bg_vni_vlan_set, l2vni_mcast, path)
 
