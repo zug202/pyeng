@@ -33,6 +33,7 @@ def parse_sh_nve(site_outputs, mpod_outputs, mpod_bg_outputs, path):
 # creating a set for site vni:
     l2vni_site_set = set(l2vni_site)
     print(f"len(l2vni_site_set) = {len(l2vni_site_set)}")
+    #print(f"(l2vni_site_set) = {l2vni_site_set}")
 # creating a set for list of tuples (vni:vlan) for site:
     l2vni_vlan_site_set = set(l2vni_vlan_site)
     print(f"len(l2vni_vlan_site_set) = {len(l2vni_vlan_site_set)}")
@@ -58,6 +59,7 @@ def parse_sh_nve(site_outputs, mpod_outputs, mpod_bg_outputs, path):
 # creating a list of tuples (vni:vlan) for mpod_bg:
     l2vni_mpod_bg = []
     l2vni_vlan_mpod_bg = []
+    vlan_mpod_bg = []
     for filename in mpod_bg_outputs:
         with open(path + '/' + filename) as f:
             match_mpod_bg = re.finditer(sh_nve_regex, f.read())
@@ -65,6 +67,7 @@ def parse_sh_nve(site_outputs, mpod_outputs, mpod_bg_outputs, path):
                 for m in match_mpod_bg:
                     l2vni_mpod_bg.append((m.group('l2vni')))
                     l2vni_vlan_mpod_bg.append((m.group('l2vni'), m.group('vlan')))
+                    vlan_mpod_bg.append(( m.group('vlan')))
 # creating a set for mpod_bg vni:
     l2vni_mpod_bg_set = set(l2vni_mpod_bg)
     print(f"len(l2vni_mpod_bg_set) = {len(l2vni_mpod_bg_set)}")
@@ -79,16 +82,16 @@ def parse_sh_nve(site_outputs, mpod_outputs, mpod_bg_outputs, path):
     vni_vlan_database.update(dict(l2vni_vlan_site_set))
     vni_vlan_database.update(dict(l2vni_vlan_mpod_set))
     vni_vlan_database.update(dict(l2vni_vlan_mpod_bg_set))
-    #print(vni_vlan_database['2072916'])
-    #print(vni_vlan_database['9013002'])
+
 
 # finding set intersection between site and mpod:
     l2vni_site_mpod_list = l2vni_site_set.intersection(l2vni_mpod_set)
-    print(f"len(l2vni_site_mpod) = {len(l2vni_site_mpod_list)}")
+    print(f"len(inter_site_mpod) = {len(l2vni_site_mpod_list)}")
     l2vni_site_bg_list = l2vni_site_set.intersection(l2vni_mpod_bg_set)
-    print(f"len(l2vni_site_bg) = {len(l2vni_site_bg_list)}")
+    print(f"len(inter_site_bg) = {len(l2vni_site_bg_list)}")
+    #print(f"list(l2vni_site_bg) = {l2vni_site_bg_list}")
     l2vni_mpod_list = l2vni_site_mpod_list.union(l2vni_site_bg_list)
-    print(f"len(ag_vni_list) = {len(l2vni_mpod_list)}")
+    print(f"len(union_mpod_bg) = {len(l2vni_mpod_list)}")
 
 # finding vni list that should be created on bg:
     bg_vni_list = []
@@ -96,7 +99,7 @@ def parse_sh_nve(site_outputs, mpod_outputs, mpod_bg_outputs, path):
         if vni not in l2vni_mpod_bg_set:
             bg_vni_list.append(vni)
     print(f"len(bg_vni_list) = {len(bg_vni_list)}")
-
+    print(f"list(bg_vni_list) = {bg_vni_list}")
 # finding ag_vni_vlan set for config generation:
     ag_vni_vlan_list = {}
     for vni in l2vni_mpod_list:
@@ -107,10 +110,14 @@ def parse_sh_nve(site_outputs, mpod_outputs, mpod_bg_outputs, path):
 
 # finding bg_vni_vlan set for config generation:
     bg_vni_vlan_list = {}
+    bg_vlan_overlap_list = []
     for vni in bg_vni_list:
         bg_vni_vlan_list.update({vni:vni_vlan_database[vni]})
     print(f"len(bg_vni_vlan_list) = {len(bg_vni_vlan_list)}")
-
+    for vni, vlan in bg_vni_vlan_list.items():
+        if vlan in set(vlan_mpod_bg):
+            bg_vlan_overlap_list.append(vlan)
+    print(f"bg_vlan_overlap_list = {bg_vlan_overlap_list}")
     bg_vni_vlan_set = sorted(set(bg_vni_vlan_list.items()))
 
 
@@ -212,12 +219,16 @@ def generate_config(ag_vni_list, bg_vni_list, l2vni_mcast, path):
 
 def main():
     path = sys.argv[1]
-    sh_nve_outputs = glob.glob(path + '/*.txt')
-    site = cfg_list(sh_nve_outputs, 'SKO-DATA-AC-014.*')
-    mpod_bl = cfg_list(sh_nve_outputs, 'SKO-DATA-BL.*')
-    mpod_bg = cfg_list(sh_nve_outputs, 'SKO-DATA-BG-[MD1|MD2].*EXT.*')
-    room_md = cfg_list(sh_nve_outputs, 'SKO-DATA-AC-MD.*')
-    mpod = room_md + mpod_bl
+    sh_nve_outputs = glob.glob(path + '/*.*')
+    site = cfg_list(sh_nve_outputs, 'SKO-DATA-AC-[MD1|MD2].*DMZ.*')
+    #print(f"cfg_list(site) = {site}")
+    mpod_bl = cfg_list(sh_nve_outputs, 'SKO-DATA-BL-.*DMZ.*')
+    #print(f"cfg_list(bl) = {mpod_bl}")
+    mpod_bg = cfg_list(sh_nve_outputs, 'SKO-DATA-BG-[MD1|MD2].*DMZ.*')
+    #print(f"cfg_list(bg) = {mpod_bg}")
+    #room_md = cfg_list(sh_nve_outputs, 'SKO-DATA-AC-[MD1|MD2].*DMZ.*')
+    #print(f"cfg_list(md) = {room_md}")
+    mpod = mpod_bl #+ room_md
     ag_vni_vlan_set, bg_vni_vlan_set, l2vni_mcast = parse_sh_nve(site, mpod, mpod_bg, path)
     generate_config(ag_vni_vlan_set, bg_vni_vlan_set, l2vni_mcast, path)
 
